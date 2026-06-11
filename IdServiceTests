@@ -1,0 +1,25 @@
+/**
+ * @description Test class for the IdService utility class. 
+ */
+@IsTest
+private class IdServiceTests {
+
+    /**
+     * @description Test method for the IdService utility class.
+     */
+    @IsTest
+    static void testIDserviceGeneratesIDsForList() {
+        Id theId = IDService.generateIdForObject('Opportunity');
+        Assert.isNotNull(theId, 'Expected to find an Id');
+        List<Opportunity> opps = (List<Opportunity>) TestFactory.createSObjectList(
+            new Opportunity(Id = theId, StageName = 'Interview Scheduled', CloseDate = Date.today()),
+            10
+        );
+        for (Opportunity opp : opps) {
+            opp.Id = IdService.generateIdForObject(opp);
+            Assert.areEqual('Interview Scheduled', opp.StageName, 'Expected to find the stage name to be Interview Scheduled');
+            Assert.areEqual(Date.today(), opp.CloseDate, 'Expected to find the close date to be today');
+            Assert.isNotNull(opp.Id, 'Expected to find an Id on the opportunity');
+        }
+    }
+}
