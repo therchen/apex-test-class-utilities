@@ -1,0 +1,44 @@
+
+@IsTest
+public class IdService {
+    private static Integer counter = 0;
+    private static Integer chargebeeIdCounter = 0;
+
+    public static Id generateIdForObject(sObject theObject) {
+        String prefix = theObject.getsObjectType().getDescribe().getKeyPrefix();
+        return generatePaddedIDStringWithPrefix(prefix);
+    }
+
+    public static Id generateIdForObject(String objectType) {
+        return IdService.generateIdForObject((sObject) Type.forName(objectType).newInstance());
+    }
+
+    private static Id generatePaddedIDStringWithPrefix(String prefix) {
+        IdService.counter = IdService.counter + 1;
+        String paddedIdString = String.valueOf(IdService.counter);
+        Integer paddingLength = 15 - paddedIdString.length();
+        String fakeId = prefix.rightPad(paddingLength, '0') + counter;
+        return (Id) fakeId;
+    }
+
+    public static String generateUniqueChargebeeId() {
+        IdService.chargebeeIdCounter = IdService.chargebeeIdCounter + 1;
+        return 'ChargeBeeid00000' + chargebeeIdCounter;
+    }
+
+    @IsTest
+    static void testIDserviceGeneratesIDsForList() {
+        Id theId = IDService.generateIdForObject('Opportunity');
+        Assert.isNotNull(theId, 'Expected to find an Id');
+        List<Opportunity> opps = (List<Opportunity>) TestFactory.createSObjectList(
+            new Opportunity(Id = theId, StageName = 'Interview Scheduled', CloseDate = Date.today()),
+            10
+        );
+        for (Opportunity opp : opps) {
+            opp.Id = IdService.generateIdForObject(opp);
+            Assert.areEqual('Interview Scheduled', opp.StageName, 'Expected to find the stage name to be Interview Scheduled');
+            Assert.areEqual(Date.today(), opp.CloseDate, 'Expected to find the close date to be today');
+            Assert.isNotNull(opp.Id, 'Expected to find an Id on the opportunity');
+        }
+    }
+}
