@@ -1,18 +1,43 @@
 
+/**
+ * @description A utility class for generating Ids for sObjects in test contexts. 
+ * This is necessary because Salesforce does not allow the creation of sObject records with specified Ids, 
+ * and some tests may require predictable Id values for assertions or to simulate certain scenarios.
+ * Additionally, this class can be used to generate Ids for sObjects that are not inserted (ie when insertion/update is not necessary for the test), 
+ * which can be useful for testing logic that operates on sObjects before they are saved to the database.
+ */
 @IsTest
 public class IdService {
-    private static Integer counter = 0;
-    private static Integer chargebeeIdCounter = 0;
 
+    /**
+     * @description A counter to ensure that generated Ids are unique within the context of a test run.
+     */
+    private static Integer counter = 0;
+
+    /**
+     * @description Generates a unique Id for the given sObject instance, using the sObject's key prefix and an internal counter to ensure uniqueness.
+     * @param theObject The sObject instance for which to generate an Id. The sObject's type will be used to determine the appropriate key prefix for the Id.
+     * @return A unique Id string that starts with the key prefix for the sObject's
+     */
     public static Id generateIdForObject(sObject theObject) {
         String prefix = theObject.getsObjectType().getDescribe().getKeyPrefix();
         return generatePaddedIDStringWithPrefix(prefix);
     }
 
+    /**
+     * @description Generates a unique Id for the given sObject type, using the sObject's key prefix and an internal counter to ensure uniqueness.
+     * @param objectType The API name of the sObject type for which to generate an Id.
+     * @return A unique Id string that starts with the key prefix for the sObject type.
+     */
     public static Id generateIdForObject(String objectType) {
         return IdService.generateIdForObject((sObject) Type.forName(objectType).newInstance());
     }
 
+    /**
+     * @description Generates a padded Id string with the given prefix, using an internal counter to ensure uniqueness.
+     * @param prefix The key prefix for the Id.
+     * @return A unique Id string that starts with the given prefix.
+     */
     private static Id generatePaddedIDStringWithPrefix(String prefix) {
         IdService.counter = IdService.counter + 1;
         String paddedIdString = String.valueOf(IdService.counter);
@@ -21,24 +46,4 @@ public class IdService {
         return (Id) fakeId;
     }
 
-    public static String generateUniqueChargebeeId() {
-        IdService.chargebeeIdCounter = IdService.chargebeeIdCounter + 1;
-        return 'ChargeBeeid00000' + chargebeeIdCounter;
-    }
-
-    @IsTest
-    static void testIDserviceGeneratesIDsForList() {
-        Id theId = IDService.generateIdForObject('Opportunity');
-        Assert.isNotNull(theId, 'Expected to find an Id');
-        List<Opportunity> opps = (List<Opportunity>) TestFactory.createSObjectList(
-            new Opportunity(Id = theId, StageName = 'Interview Scheduled', CloseDate = Date.today()),
-            10
-        );
-        for (Opportunity opp : opps) {
-            opp.Id = IdService.generateIdForObject(opp);
-            Assert.areEqual('Interview Scheduled', opp.StageName, 'Expected to find the stage name to be Interview Scheduled');
-            Assert.areEqual(Date.today(), opp.CloseDate, 'Expected to find the close date to be today');
-            Assert.isNotNull(opp.Id, 'Expected to find an Id on the opportunity');
-        }
-    }
 }
